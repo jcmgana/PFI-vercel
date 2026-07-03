@@ -22,7 +22,7 @@ export const parseSafeStock = (stock) => {
     const clean = typeof stock === "string" ? stock.trim() : String(stock ?? "");
     const num = Number(clean);
     
-    if (clean === "" || isNaN(num) || num < 0) {
+    if (clean === "" || isNaN(num) || num < 0 || num > 1000000) {
         return null; // Bandera de error
     }
     return num;

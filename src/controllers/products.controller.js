@@ -8,53 +8,41 @@ import {
     updateProductService,
     deleteProductService,
 } from "../services/products.service.js";
-import {
-    parseSafePrice,
-    parceSafeStock,
-    validateRequiredString,
-    parseSafeStock,
-} from "../utils/validators.js";
+import { parseSafePrice, parseSafeStock, validateRequiredString } from "../utils/validators.js";
 
 // 1. Obtener todos los productos, o con filtro.
 export const getAllProducts = async (req, res) => {
     try {
         const categoryQuery = req.query.category;
         const priceQuery = req.query.price;
-
+        // Si no hay filtros, vienen todos los productos
         if (categoryQuery === undefined && priceQuery === undefined) {
             const products = await getAllProductsService();
-            return res.status(200).json(products);
+            return res.status(200).json({
+                enInventario: products.length,
+                productos: products
+            });
         }
 
         const filtrosActivos = {};
-
+        // Validación del precio
         if (priceQuery !== undefined) {
-            const cleanPrice =
-                typeof priceQuery === "string" ? priceQuery.trim() : "";
-            if (
-                cleanPrice === "" ||
-                isNaN(Number(cleanPrice)) ||
-                Number(cleanPrice) <= 0 ||
-                Number(cleanPrice) > 1000000
-            ) {
+            const validatedPrice = parseSafePrice(priceQuery);
+            if (validatedPrice === null) {
                 return res.status(400).json({
                     error: "El precio debe ser un número válido, mayor a cero y menor o igual a 1.000.000.",
                 });
             }
-            filtrosActivos.price = Number(cleanPrice);
+            filtrosActivos.price = validatedPrice;
         }
 
         if (categoryQuery !== undefined) {
-            if (
-                typeof categoryQuery !== "string" ||
-                categoryQuery.trim() === ""
-            ) {
-                return res
-                    .status(400)
-                    .json({ error: "La categoría provista no es válida." });
+            const cleanCategory = validateRequiredString(categoryQuery);
+            if (!cleanCategory) {
+                return res.status(400).json({ error: "La categoría provista no es válida." });
             }
 
-            if (categoryQuery.length > 30) {
+            if (cleanCategory.length > 30) {
                 return res.status(400).json({
                     error: "Bad Request",
                     mensaje:
@@ -62,7 +50,7 @@ export const getAllProducts = async (req, res) => {
                 });
             }
 
-            filtrosActivos.category = categoryQuery.trim().toLowerCase();
+            filtrosActivos.category = cleanCategory.toLowerCase();
         }
         const products = await getProductsByFiltersService(filtrosActivos);
 
@@ -145,7 +133,7 @@ export const createProduct = async (req, res) => {
             .status(400)
             .json({
                 message:
-                    "Stock inválido. Debe ser un número mayor o igual a cero.",
+                    "Stock inválido. Debe ser un número mayor o igual a cero, y menor a 1.000.000. ",
             });
     }
     data.stock = validatedStock;
@@ -196,7 +184,7 @@ export const createProductsBulk = async (req, res) => {
             const validatedStock = parseSafeStock(prod.stock);
             if (validatedStock === null) {
                 return res.status(400).json({
-                    error: `El producto '${prod.name}' tiene un stock inválido (${prod.stock}). Debe ser un número mayor o igual a cero.`,
+                    error: `El producto '${prod.name}' tiene un stock inválido (${prod.stock}). Debe ser un número mayor o igual a cero, y menor a 1.000.000. `,
                 });
             }
             prod.stock = validatedStock; // Asignamos el stock limpio
@@ -242,7 +230,7 @@ export const updateProduct = async (req, res) => {
         const validatedStock = parseSafeStock(data.stock);
         if (validatedStock === null) {
             return res.status(400).json({
-                error: `Stock inválido (${data.stock}). Debe ser un número mayor o igual a cero.`,
+                error: `Stock inválido (${data.stock}). Debe ser un número mayor o igual a cero, y menor a 1.000.000.`,
             });
         }
         data.stock = validatedStock;
