@@ -1,8 +1,8 @@
 # 📝 E-Commerce API - Proyecto Final Integrador Node.js Talento Tech
+Alumno: Joaquín Gana || Comisión: 26132
+¡Bienvenido! Este es mi Proyecto Final Integrador para el curso de Back-End **Node.JS**. Desarrollamos una API Rest para un cliente que tiene diversos productos en catálogo y precisa administrarlos, habilitando la posibilidad de Leer, Crear, Actualizar y Eliminar la información sobre los mismos. Utiliza **Firestore (Firebase)** como base de datos en la nube y está protegida mediante autenticación por tokens **JWT (JSON Web Tokens)**.
 
-¡Bienvenido! Este proyecto es una API RESTful desarrollada en **Node.js** y **Express**, diseñada bajo una arquitectura limpia y robusta dividida en **6 Capas independientes**. Utiliza **Firestore (Firebase)** como base de datos en la nube y está protegida mediante autenticación por tokens **JWT (JSON Web Tokens)**.
-
-El servidor está optimizado y configurado para ser desplegado en **Vercel**
+El servidor está configurado para ser desplegado en **Vercel**
 
 ---
 
@@ -13,16 +13,16 @@ El servidor está optimizado y configurado para ser desplegado en **Vercel**
 *   **Base de Datos:** Firestore (Firebase Admin / SDK)
 *   **Seguridad:** JSON Web Tokens (JWT) & bcrypt
 *   **Variables de Entorno:** dotenv
-*   **CORS:** Configurado para integración con Frontend
 
 ---
 
 ## 🏗️ Arquitectura del Proyecto (Patrón de 6 Capas)
+Para que sea escalable, se separaron las distintas responsabilidades de la aplicación en capas que permitan establecer rutas, controladores, servicios y modelos de forma clara y prolija, además de definir las carpetas necesarias para guardar middlewares y configuración a servicios externos.
 
 1.  **Base de Datos (`src/data/`):** Conexión e inicialización centralizada del SDK de Firebase.
-2.  **Modelos (`src/models/`):** Capa genérica de persistencia de datos. Interactúa directo con las colecciones de Firestore.
-3.  **Servicios (`src/services/`):** Lógica de negocio pura. Aquí se procesan los datos, se aplican reglas y se mapean las estructuras (ej. formateo de campos a inglés).
-4.  **Middlewares (`src/middleware/`):** Búnker de seguridad y control de acceso (Validación robusta de JWT).
+2.  **Modelos (`src/models/`):** Capa que interactúa directo con las colecciones de Firestore.
+3.  **Servicios (`src/services/`):** Lógica de negocio: aquí se procesan los datos, se aplican reglas y se mapean las estructuras (ej. formateo de campos a inglés).
+4.  **Middlewares (`src/middleware/`):** Validación de JWT.
 5.  **Controladores (`src/controllers/`):** Manejo de peticiones (`req`) y respuestas (`res`), validación estricta de tipos de datos, query params y códigos de estado HTTP.
 6.  **Rutas (`src/routes/`):** Mapeo semántico de los endpoints (Públicos y Protegidos).
 
