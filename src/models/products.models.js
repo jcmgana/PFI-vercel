@@ -9,6 +9,7 @@ import {
     deleteDoc,
     query,
     where,
+    writeBatch
 } from "firebase/firestore";
 import { db } from "../data/firebase.data.js";
 
@@ -57,6 +58,34 @@ export async function createDocument(collectionName, data) {
     console.log("colección: ", colRef);
     const docRef = await addDoc(colRef, data);
     return docRef.id;
+}
+
+/**
+ * Crea múltiples documentos en lote (Bulk) en una colección
+ * Firestore genera los ids automáticamente y realiza una única petición a la red
+ * @param {string} collectionName Nombre de la colección en Firestore.
+ * @param {Array<Object>} dataArray Array de objetos con los campos de los documentos. 
+ * @returns {Promise<string>} Cantidad de documentros creados.
+ *  */
+export async function createDocumentsBulk(collectionName, dataArray) {
+    console.log(`Iniciando carga masiva en lote para la colección: ${collectionName}`);
+    console.log(`Cantidad de elemenetos a procesar: ${dataArray}`);
+    const batch = writeBatch(db);
+    const colRef = collection(db, collectionName);
+
+    dataArray.forEach((data) => {
+        // Se genera una referencia de documento vacía dentro de la colección para obtener un ID automático
+        const docRef = doc(colRef);
+        // Agregamos la operación de seteo al lote de forma local
+        batch.set(docRef, {
+            ...data,
+            createdAt: new Date() // Agrega fechade creación
+        });
+    });
+    // Se manda todo en un único viaje de red a Firebase 
+    await batch.commit();
+    console.log("¡Lote de documentos guardado con éxito en Firestore!");
+    return dataArray.length;
 }
 
 /**

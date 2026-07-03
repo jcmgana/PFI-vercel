@@ -39,7 +39,7 @@ app.get("/", (req, res) => {
         mensaje: "Bienvenido a la API del Proyecto Final Integrador de Joaquín Gana para la Comisión 26132 de Back-End NodeJS de Talento Tech",
         estado: "Online",
         versión: "2.0.0",
-        documentación: "Escribí products para ver el catálogo."
+        documentación: "Escribí api/products para ver el catálogo."
     });
 });
 

@@ -2,6 +2,7 @@ import {
     readDocuments,
     readDocument,
     createDocument,
+    createDocumentsBulk,
     updateDocument,
     deleteDocument,
 } from "../models/products.models.js";
@@ -15,8 +16,8 @@ const formatProductStructure = (product) => {
         name: product.name,
         price: product.price,
         category: product.category,
-        stock: product.stock,
         description: product.description || "", // Si no tiene descripción, evita que quede undefined
+        stock: product.stock !== undefined ? Number(product.stock) : 0,
     };
 };
 
@@ -54,6 +55,8 @@ export const getProductsByFiltersService = async ({ category, price }) => {
 
 export const createProductService = async (producto) =>
     await createDocument("products", producto);
+export const createProductsBulkService = async (productsArray) => 
+    await createDocumentsBulk("products", productsArray);
 export const updateProductService = async (id, data) =>
     await updateDocument("products", id, data);
 export const deleteProductService = async (id) =>
