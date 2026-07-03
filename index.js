@@ -43,12 +43,13 @@ app.get("/", (req, res) => {
     });
 });
 
-// Auth Router
+
 app.use(bodyParser.json());
+
+// Auth Router
 app.use('/auth', authRouter);
 // Productos Router
 app.use(productsRouter);
-
 
 
 
