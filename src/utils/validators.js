@@ -27,3 +27,16 @@ export const parseSafeStock = (stock) => {
     }
     return num;
 };
+
+// Categoría: Valida y normaliza categorías de productos
+export const parseSafeCategory = (category) => {
+    if (!validateRequiredString(category)) {
+        return null; // Error si está vacía, es undefined o espacios en blanco
+    }
+
+    const clean = category.trim();
+    if (clean.length > 30) {
+        return null; 
+    }
+    return clean.toLowerCase();
+};
