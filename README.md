@@ -25,6 +25,7 @@ Para que sea escalable, se separaron las distintas responsabilidades de la aplic
 4.  **Middlewares (`src/middleware/`):** Validación de JWT.
 5.  **Controladores (`src/controllers/`):** Manejo de peticiones (`req`) y respuestas (`res`), validación estricta de tipos de datos, query params y códigos de estado HTTP.
 6.  **Rutas (`src/routes/`):** Mapeo semántico de los endpoints (Públicos y Protegidos).
+7. **Utils (`src/utils/`):**  Utilidades.
 
 ---
 
@@ -37,6 +38,7 @@ Para que sea escalable, se separaron las distintas responsabilidades de la aplic
 | **GET** | `/api/products` | 🔓 Público | Obtiene todos los productos. Soporta filtros opcionales por Query Params (`?category=...&price=...`). |
 | **GET** | `/api/products/:id` | 🔓 Público | Obtiene un producto específico por su ID alfanumérico de Firestore. |
 | **POST** | `/api/products` | 🔒 Protegido | Crea un nuevo producto. Requiere JWT. |
+| **POST** | `api/products/createBulk` | 🔒 Protegido | Crea nuevos productos en lote. Requiere JWT. |
 | **PUT** | `/api/products/:id` | 🔒 Protegido | Modifica los campos de un producto existente por ID. Requiere JWT. |
 | **DELETE**| `/api/products/:id` | 🔒 Protegido | Elimina un producto de la base de datos por ID. Requiere JWT. |
 
