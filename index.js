@@ -9,12 +9,17 @@ import bodyParser from "body-parser";
 const app = express();
 
 // CORS
+const ACCEPTED_ORIGINS = [
+    'http://localhost:5173',  // ◄ Tu React en desarrollo local (Vite)
+    'http://localhost:3001',  // ◄ Por si usás Create React App o el puerto cambia
+    // ◄ Cuando subas tu React a producción, clavás la URL acá
+];
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || origin ===  `http://localhost:${PORT}`) {
+        if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
             callback(null, true);
         } else {
-            callback (new Error("No permitido por CORS."))
+            callback (new Error("Acceso no permitido por la política de CORS de esta API."))
         }
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -23,14 +28,11 @@ app.use(cors({
 
 app.use(express.json());
 
-
 // Middleware que examina las solicitudes entrantes
 app.use((req, res, next) => {
     console.log(`Datos recibidos: ${req.method} ${req.url}`);
     next();
 })
-
-
 
 // Rutas
 // Página de inicio
@@ -43,15 +45,12 @@ app.get("/", (req, res) => {
     });
 });
 
-
 app.use(bodyParser.json());
 
 // Auth Router
 app.use('/auth', authRouter);
 // Productos Router
 app.use(productsRouter);
-
-
 
 // Manejo de error 404 (Ruta no encontrada)
 app.use(function(req, res, next) {

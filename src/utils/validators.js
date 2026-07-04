@@ -70,7 +70,7 @@ export const parseSafeEmail = (email) => {
 // Validar contraseña
 export const parseSafePassword = (password) => {
     if (typeof password !== "string") return null;
-    if (password < 6) {
+    if (password.length < 6) {
         return null;
     }
     return password;
