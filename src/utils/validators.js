@@ -69,9 +69,10 @@ export const parseSafeEmail = (email) => {
 
 // Validar contraseña
 export const parseSafePassword = (password) => {
-    if (typeof password !== "string") return null;
-    if (password.length < 6) {
+    if (password === undefined || password === null) return null;
+    const passwordStr = String(password);
+    if (passwordStr.length < 6) {
         return null;
     }
-    return password;
+    return passwordStr;
 };
