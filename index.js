@@ -12,7 +12,7 @@ const app = express();
 const ACCEPTED_ORIGINS = [
     'http://localhost:5173',  // ◄ Tu React en desarrollo local (Vite)
     'http://localhost:3001',  // ◄ Por si usás Create React App o el puerto cambia
-    // ◄ Cuando subas tu React a producción, clavás la URL acá
+    'https://jcmgana.github.io' // ◄ Cuando subas tu React a producción, clavás la URL acá
 ];
 app.use(cors({
     origin: (origin, callback) => {
