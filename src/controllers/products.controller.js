@@ -55,21 +55,27 @@ export const getAllProducts = async (req, res) => {
 
         if (products.length === 0) {
             return res.status(404).json({
-                error: "No se encontraron productos con esos filtros.",
+                status: "error",
+                message:
+                    "No se encontraron productos con esos criterios de búsqueda.",
             });
         }
 
         return res.status(200).json({
+            status: "success",
             criterioBusqueda: {
-                categoria: categoryQuery || null,
+                categoria: filtrosActivos.category || null,
                 precio: filtrosActivos.price || null,
             },
             resultadosEncontrados: products.length,
             productos: products,
         });
     } catch (error) {
-        console.error("Detalle completo del error 500:", error);
-        return res.status(500).json({ error: "Error interno del servidor" });
+        console.error("Error en getAllProducts:", error.message);
+        return res.status(500).json({
+            status: "error",
+            message: "Error al obtener los productos.",
+        });
     }
 };
 
@@ -81,8 +87,8 @@ export const getProductById = async (req, res) => {
         // Validamos que el ID no venga vacío o sea algo raro
         if (!validateRequiredString(id)) {
             return res.status(400).json({
-                error: "Bad Request",
-                mensaje: "El ID del producto provisto no es válido.",
+                status: "error",
+                message: "El ID del producto provisto no es válido.",
             });
         }
 
@@ -103,120 +109,133 @@ export const getProductById = async (req, res) => {
 export const createProduct = async (req, res) => {
     const data = req.body;
 
-    // 1. Validar Nombre
     if (!validateRequiredString(data.name)) {
-        return res
-            .status(400)
-            .json({ message: "El nombre del producto es requerido." });
+        return res.status(400).json({
+            status: "error",
+            message: "El nombre del producto es requerido.",
+        });
     }
 
-    // 2. Validar Precio
     const validatedPrice = parseSafePrice(data.price);
     if (validatedPrice === null) {
-        return res
-            .status(400)
-            .json({
-                message:
-                    "Precio inválido. Debe ser numérico, mayor a 0 y menor a 1.000.000.",
-            });
+        return res.status(400).json({
+            status: "error",
+            message:
+                "Precio inválido. Debe ser un número mayor a cero y menor o igual a 1.000.000.",
+        });
     }
-    data.price = validatedPrice;
 
-    // 3. Validar Stock
     const validatedStock = parseSafeStock(data.stock);
     if (validatedStock === null) {
-        return res
-            .status(400)
-            .json({
-                message:
-                    "Stock inválido. Debe ser un número entre 0 y 1.000.000.",
-            });
+        return res.status(400).json({
+            status: "error",
+            message: "Stock inválido. Debe ser un entero entre 0 y 1.000.000.",
+        });
     }
-    data.stock = validatedStock;
 
-    // 4. Validar Categoría (Obligatoria al crear)
     const validatedCategory = parseSafeCategory(data.category);
     if (validatedCategory === null) {
-        return res
-            .status(400)
-            .json({
-                message:
-                    "Categoría requerida. Debe tener texto y un máximo de 30 caracteres.",
-            });
+        return res.status(400).json({
+            status: "error",
+            message:
+                "Categoría requerida. Debe ser un texto válido de máximo 30 caracteres.",
+        });
     }
-    data.category = validatedCategory; 
+
+    const cleanProduct = sanitizeProductData({
+        name: data.name,
+        price: validatedPrice,
+        stock: validatedStock,
+        category: validatedCategory,
+    });
 
     try {
-        const newProduct = await createProductService(data);
+        const newProduct = await createProductService(cleanProduct);
         res.status(201).json({
+            status: "success",
             message: "Producto creado con éxito",
             data: newProduct,
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error al crear el producto" });
+        console.error("Fallo crítico en createproduct:", error);
+        res.status(500).json({
+            status: "error",
+            message: "Error interno del servidor al crear el producto",
+        });
     }
 };
 
 // 4. Crear un lote de productos
 export const createProductsBulk = async (req, res) => {
-    try {
-        const products = req.body;
+    const products = req.body;
 
-        // 1. Validación de un array y no vacío
-        if (!Array.isArray(products) || products.length === 0) {
+    if (!Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({
+            status: "error",
+            message:
+                "Se requiere un lote de productos en formato de array no vacío.",
+        });
+    }
+
+    const sanitizedBatch = [];
+
+    // Control de calidad estricto antes de impactar el servicio
+    for (const prod of products) {
+        if (!validateRequiredString(prod.name)) {
             return res.status(400).json({
-                error: "El cuerpo de la petición debe ser un array de productos y no estar vacío.",
+                status: "error",
+                message:
+                    "Todos los productos del lote deben incluir un nombre válido.",
             });
         }
 
-        // 2. Control de calidad de los productos antes de invocar al servicio
-        for (const prod of products) {
-            // Validación del nombre
-            if (!validateRequiredString(prod.name)) {
-                return res.status(400).json({
-                    error: "Todos los productos del lote deben incluir un nombre válido.",
-                });
-            }
-
-            // Validación del precio
-            const validatedPrice = parseSafePrice(prod.price);
-            if (validatedPrice === null) {
-                return res.status(400).json({
-                    error: `El producto '${prod.name}' tiene un precio inválido (${prod.price}). Debe ser un número mayor a cero y menor o igual a 1.000.000.`,
-                });
-            }
-            prod.price = validatedPrice; // Asignamos el precio limpio
-
-            // Validación del stock
-            const validatedStock = parseSafeStock(prod.stock);
-            if (validatedStock === null) {
-                return res.status(400).json({
-                    error: `El producto '${prod.name}' tiene un stock inválido (${prod.stock}). Debe ser un número mayor o igual a cero, y menor a 1.000.000. `,
-                });
-            }
-            prod.stock = validatedStock; // Asignamos el stock limpio
-            // Validación de la categoría
-            const validatedCategory = parseSafeCategory(prod.category);
-            if (validatedCategory === null) {
-                return res.status(400).json({
-                    error: `El producto '${prod.name}' tiene una categoría inválida. Debe ser un texto válido de máximo 30 caracteres.`,
-                });
-            }
-            prod.category = validatedCategory; // Asignamos la categoría limpiada
+        const validatedPrice = parseSafePrice(prod.price);
+        if (validatedPrice === null) {
+            return res.status(400).json({
+                status: "error",
+                message: `El producto '${prod.name}' tiene un precio inválido (${prod.price}).`,
+            });
         }
 
-        // 3. Si las validaciones son superadas, se llama al servicio
-        const cantidad = await createProductsBulkService(products);
+        const validatedStock = parseSafeStock(prod.stock);
+        if (validatedStock === null) {
+            return res.status(400).json({
+                status: "error",
+                message: `El producto '${prod.name}' tiene un stock inválido (${prod.stock}).`,
+            });
+        }
 
+        const validatedCategory = parseSafeCategory(prod.category);
+        if (validatedCategory === null) {
+            return res.status(400).json({
+                status: "error",
+                message: `El producto '${prod.name}' tiene una categoría inválida.`,
+            });
+        }
+
+        // Sanitizamos y extraemos solo las propiedades oficiales (Puntos 1 y 3)
+        const cleanProd = sanitizeProductData({
+            name: prod.name,
+            price: validatedPrice,
+            stock: validatedStock,
+            category: validatedCategory,
+        });
+
+        sanitizedBatch.push(cleanProd);
+    }
+
+    try {
+        const result = await createProductsBulkService(sanitizedBatch);
         return res.status(201).json({
             status: "success",
-            message: `Carga masiva completada con éxito. Se agregaron ${cantidad} productos al catálogo.`,
+            message: `${result.length} productos insertados masivamente con éxito.`,
+            productos: result,
         });
     } catch (error) {
-        console.error("Error en el controlador bulk create:", error);
+        console.error("❌ Fallo crítico en createProductsBulk:", error);
         return res.status(500).json({
-            error: "Error interno en el servidor al procesar la carga masiva.",
+            status: "error",
+            message: "Error interno del servidor en la carga masiva.",
         });
     }
 };
@@ -229,37 +248,56 @@ export const updateProduct = async (req, res) => {
     if (!validateRequiredString(id)) {
         return res
             .status(400)
-            .json({ message: "ID del producto válido es requerido" });
+            .json({ status: "error", message: "El ID provisto no es válido." });
     }
+
+    const fieldsToUpdate = {};
+    if (data.name !== undefined) {
+        return res.status(400).json({
+            status: "error",
+            message: "El nombre provisto no es válido.",
+        });
+    }
+    fieldsToUpdate.name = data.name.trim();
+
     // Validación del precio
     if (data.price !== undefined) {
         const validatedPrice = parseSafePrice(data.price);
         if (validatedPrice === null) {
             return res.status(400).json({
-                error: `Precio inválido (${data.price}). Debe ser un número mayor a cero y menor o igual a 1.000.000.`,
+                status: "error",
+                message: "Precio inválido para actualización.",
             });
         }
-        data.price = validatedPrice;
+        fieldsToUpdate.price = validatedPrice;
     }
     // Validación de Stock (si se incluye en la modificación)
     if (data.stock !== undefined) {
         const validatedStock = parseSafeStock(data.stock);
         if (validatedStock === null) {
             return res.status(400).json({
-                error: `Stock inválido (${data.stock}). Debe ser un número mayor o igual a cero, y menor a 1.000.000.`,
+                status: "error",
+                message: "Stock inválido para actualización.",
             });
         }
-        data.stock = validatedStock;
+        fieldsToUpdate.stock = validatedStock;
     }
     // Validación de Categoría (si se incluye en la modificación)
     if (data.category !== undefined) {
         const validatedCategory = parseSafeCategory(data.category);
         if (validatedCategory === null) {
-            return res.status(400).json({ 
-                message: "Categoría inválida. Debe ser un texto válido de máximo 30 caracteres." 
+            return res.status(400).json({
+                status: "error",
+                message: "Categoría inválida para actualización.",
             });
         }
-        data.category = validatedCategory;
+        fieldsToUpdate.category = validatedCategory;
+    }
+    if (Object.keys(fieldsToUpdate).length === 0) {
+        return res.status(400).json({
+            status: "error",
+            message: "No se enviaron campos válidos para actualizar.",
+        });
     }
     try {
         await updateProductService(id, data);
@@ -277,19 +315,29 @@ export const updateProduct = async (req, res) => {
 // 6. Eliminar un producto
 export const deleteProduct = async (req, res) => {
     const id = req.params.id;
+
     if (!validateRequiredString(id)) {
-        return res
-            .status(400)
-            .json({ message: "ID del producto válido es requerido." });
+        return res.status(400).json({
+            status: "error",
+            message: "ID del producto válido es requerido.",
+        });
     }
+
     try {
         await deleteProductService(id);
-        return res
-            .status(200)
-            .json({ message: `Producto id: ${id} eliminado correctamente` });
+        return res.status(200).json({
+            status: "success",
+            message: `Producto con ID ${id} eliminado correctamente.`,
+        });
     } catch (error) {
-        return res
-            .status(500)
-            .json({ message: "Error al eliminar el producto" });
+        console.error(
+            `Fallo crítico en deleteProduct para el ID ${id}:`,
+            error,
+        );
+        return res.status(500).json({
+            status: "error",
+            message:
+                "Error interno del servidor al intentar eliminar el producto.",
+        });
     }
 };

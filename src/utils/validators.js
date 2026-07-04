@@ -40,3 +40,38 @@ export const parseSafeCategory = (category) => {
     }
     return clean.toLowerCase();
 };
+
+// Filtra campos fantasma y limpia strings
+export const sanitizeProductData = (rawData) => {
+    return {
+        name: typeof rawData.name === "string" ? rawData.name.trim() : "",
+        price: Number(rawData.price),
+        stock: Number(rawData.stock),
+        category: typeof rawData.category === "string" ? rawData.category.trim().toLowerCase() : ""
+    };
+};
+
+//
+// Usuario y contraseña
+// Validar y normalizar email
+export const parseSafeEmail = (email) => {
+    if (typeof email !== "string") return null;
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Expresión regular estándar de estructura: texto + @ + texto + . + texto
+    const emailRegEx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegEx.test(cleanEmail)) {
+        return null;
+    }
+    return cleanEmail;
+};
+
+// Validar contraseña
+export const parseSafePassword = (password) => {
+    if (typeof password !== "string") return null;
+    if (password < 6) {
+        return null;
+    }
+    return password;
+};
